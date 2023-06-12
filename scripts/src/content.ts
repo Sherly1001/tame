@@ -65,9 +65,11 @@ function load() {
 
                 let block = false;
                 if (cfg.blockMode == "blacklist") {
-                  if (pay3Obj.thread_key in cfg.blacklist) block = true;
+                  if (cfg.blacklist.includes(pay3Obj.thread_key.toString()))
+                    block = true;
                 } else {
-                  if (!(pay3Obj.thread_key in cfg.whitelist)) block = true;
+                  if (!cfg.whitelist.includes(pay3Obj.thread_key.toString()))
+                    block = true;
                 }
 
                 if (block) return;
@@ -80,7 +82,7 @@ function load() {
                 for (const i in pay2Obj.tasks) {
                   if (pay2Obj.tasks[i].label == "21") {
                     const pay3Obj = JSON.parse(pay2Obj.tasks[i].payload);
-                    hasRead = pay3Obj.thread_id;
+                    hasRead = pay3Obj.thread_id.toString();
                     pay3Obj.last_read_watermark_ts = 1e3 * Date.now();
                     pay2Obj.tasks[i].payload = JSON.stringify(pay3Obj);
                   }
@@ -89,9 +91,9 @@ function load() {
                 if (hasRead) {
                   let block = false;
                   if (cfg.blockMode == "blacklist") {
-                    if (hasRead in cfg.blacklist) block = true;
+                    if (cfg.blacklist.includes(hasRead)) block = true;
                   } else {
-                    if (!(hasRead in cfg.whitelist)) block = true;
+                    if (!cfg.whitelist.includes(hasRead)) block = true;
                   }
 
                   if (block) {
