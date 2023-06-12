@@ -15,7 +15,7 @@ export class Config {
 
 export interface Message {
   cfg?: Config;
-  toggleBlockMode?: boolean;
+  toggleBlockMode?: BLockMode;
   toggleBlockSeen?: boolean;
   toggleBlockTyping?: boolean;
   addToBlacklist?: string;

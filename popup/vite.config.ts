@@ -5,4 +5,9 @@ import react from "@vitejs/plugin-react-swc";
 export default defineConfig({
   plugins: [react()],
   base: "/popup/dist",
+  server: {
+    fs: {
+      allow: ["./src", "../scripts/src"],
+    },
+  },
 });
