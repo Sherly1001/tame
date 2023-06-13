@@ -63,6 +63,10 @@ function load() {
                 const pay2Obj = JSON.parse(payObj.payload);
                 const pay3Obj = JSON.parse(pay2Obj.payload);
 
+                if (!pay3Obj.thread_key) {
+                  return Reflect.apply(target, thisArg, argArray);
+                }
+
                 let block = false;
                 if (cfg.blockMode == "blacklist") {
                   if (cfg.blacklist.includes(pay3Obj.thread_key.toString()))
