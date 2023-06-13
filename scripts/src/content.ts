@@ -127,7 +127,7 @@ function inject() {
   const script = document.createElement("script");
 
   script.id = "inject-mqtt";
-  script.src = "https://cdn.jsdelivr.net/gh/zit0zit/mqttjs@master/mqtt.js";
+  script.src = browser.runtime.getURL("scripts/dist/mqtt.js");
 
   script.onload = () => {
     document.getElementById("inject-script")?.remove();
