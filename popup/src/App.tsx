@@ -2,6 +2,7 @@ import {
   Box,
   Button,
   Flex,
+  Link,
   NumberInput,
   NumberInputField,
   Switch,
@@ -12,6 +13,7 @@ import {
   Tabs,
   Text,
 } from "@chakra-ui/react";
+import { faGithub } from "@fortawesome/free-brands-svg-icons";
 import { faCheck, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
@@ -37,7 +39,7 @@ export default function App() {
   }, []);
 
   return (
-    <Box minWidth="52" minHeight="60">
+    <Box minHeight="60">
       <Flex padding="2">
         <Flex
           flex="1"
@@ -70,6 +72,7 @@ export default function App() {
         </Flex>
       </Flex>
       <Tabs
+        position="relative"
         onChange={(idx) => {
           sendMsg({ toggleBlockMode: idx ? "whitelist" : "blacklist" });
         }}
@@ -174,6 +177,11 @@ export default function App() {
             ))}
           </TabPanel>
         </TabPanels>
+        <Box position="absolute" top="2" right="4">
+          <Link href="https://github.com/Sherly1001/tame" target="_blank">
+            <FontAwesomeIcon icon={faGithub} />
+          </Link>
+        </Box>
       </Tabs>
     </Box>
   );
