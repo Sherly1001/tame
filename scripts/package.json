@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "build": "yarn content; yarn background",
-    "content": "browserify -p tsify ./src/content.ts -o dist/content.js",
-    "background": "browserify -p tsify ./src/background.ts -o dist/background.js"
+    "content": "browserify -p tsify -p tinyify ./src/content.ts -o dist/content.js",
+    "background": "browserify -p tsify -p tinyify ./src/background.ts -o dist/background.js"
   },
   "devDependencies": {
     "@types/firefox-webext-browser": "^111.0.1",
     "browserify": "^17.0.0",
+    "tinyify": "^4.0.0",
     "tsify": "^5.0.4",
     "ttypescript": "^1.5.15",
     "typescript": "^5.1.3"

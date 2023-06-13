@@ -134,7 +134,7 @@ function inject() {
     const script = document.createElement("script");
 
     script.id = "inject-script";
-    script.textContent = `${load.toString()}; load();`;
+    script.textContent = `!(()=>{${load.toString()};${load.name}();})()`;
 
     document.head.insertBefore(
       script,
