@@ -16,7 +16,7 @@ browser.runtime.onConnect.addListener(async (port) => {
       sendCfg(cfg, port.sender?.tab?.id);
     }
   } catch (err) {
-    console.log("connect", err);
+    console.error("connect", err);
   }
 });
 

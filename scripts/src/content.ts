@@ -11,7 +11,7 @@ browser.runtime.onMessage.addListener(async (msg, _sender) => {
       wrappedJSObject.cfg = cloneInto(data.cfg, window);
     }
   } catch (err) {
-    console.log("msg", err);
+    console.error("runtime.msg", err);
   }
 });
 
@@ -22,6 +22,8 @@ wrappedJSObject.browser = cloneInto(browser, window, { cloneFunctions: true });
 // page context
 
 function load() {
+  console.debug("injected load");
+
   const opts = {
     protocolVersion: 3,
   };
@@ -92,7 +94,7 @@ function load() {
     return gr;
   }
 
-  try {
+  function bodyLoad() {
     const groups = getKey("message_threads", true).find((g: any) => g.edges);
     const users = getKey("chat_sidebar_contact_rankings").map(
       (u: any) => u.user
@@ -124,66 +126,76 @@ function load() {
           return acc;
         }, {});
     }
-  } catch (err) {
-    console.log(err);
   }
 
   WebSocket = new Proxy(WebSocket, {
     construct(target, args, newTarget) {
       const ws: WebSocket = Reflect.construct(target, args, newTarget);
+      console.debug("new socket created", ws);
 
       ws.addEventListener("message", (event) => {
+        const cfg: Config = awin.cfg;
+
+        if (
+          !cfg.fakeMessageNotification ||
+          !ws.url.includes("edge-chat") ||
+          isFocused()
+        ) {
+          return;
+        }
+
         const p = mqtt.parser(opts);
 
         p.on("packet", (packet) => {
-          const cfg: Config = awin.cfg;
-
-          if (
-            cfg.fakeMessageNotification &&
-            packet.cmd == "publish" &&
-            packet.topic == "/ls_resp"
-          ) {
+          if (packet.cmd == "publish" && packet.topic == "/ls_resp") {
             const data = new TextDecoder().decode(packet.payload);
             const objPay = JSON.parse(data);
             if (!objPay.sp) return;
             if (objPay.sp.includes("updateThreadSnippet")) {
               const obj2Pay = JSON.parse(objPay.payload);
               const arr = find(obj2Pay.step, "updateThreadSnippet");
-              if (arr && arr[5][1] != uid) {
-                const msg = {
-                  cid: arr[2][1],
-                  uid: arr[5][1],
-                  msg: arr[3],
-                };
+              if (!arr || arr[5][1] == uid) return;
 
-                const path = document.location.pathname.split("/");
-                if (!isFocused() || path[path.length - 1] != msg.cid) {
-                  const user = awin.users[msg.uid];
-                  const group = awin.groups
-                    ? awin.groups[msg.cid]
-                    : getGroup(msg.cid);
+              const msg = {
+                cid: arr[2][1],
+                uid: arr[5][1],
+                msg: arr[3],
+              };
 
-                  const title =
-                    "Facebook: " +
-                    (group ? user.name + " to " + group.name : user.name);
+              const user = awin.users[msg.uid];
+              const group = awin.groups
+                ? awin.groups[msg.cid]
+                : getGroup(msg.cid);
 
-                  new Notification(title, {
-                    icon: group ? group.img : user.profile_picture.uri,
-                    body: msg.msg,
-                  });
-                }
-              }
+              const title =
+                "Facebook: " +
+                (group ? user.name + " to " + group.name : user.name);
+
+              new Notification(title, {
+                icon: group ? group.img : user.profile_picture.uri,
+                body: msg.msg,
+              });
             }
           }
         });
 
-        p.on("error", (_err) => {});
+        p.on("error", (err) => {
+          if (err.toString().includes("Invalid header flag bits")) {
+            console.warn("msg", err);
+          } else {
+            console.error("msg", err);
+          }
+        });
 
         p.parse(event.data);
       });
 
       ws.send = new Proxy(ws.send, {
         apply(target, thisArg, argArray) {
+          if (!ws.url.includes("edge-chat")) {
+            return Reflect.apply(target, thisArg, argArray);
+          }
+
           const cfg: Config = awin.cfg;
 
           const data = argArray[0];
@@ -249,7 +261,8 @@ function load() {
             return Reflect.apply(target, thisArg, argArray);
           });
 
-          p.on("error", (_err) => {
+          p.on("error", (err) => {
+            console.error("send", err);
             return Reflect.apply(target, thisArg, argArray);
           });
 
@@ -260,9 +273,14 @@ function load() {
       return ws;
     },
   });
+
+  document.addEventListener("DOMContentLoaded", bodyLoad);
 }
 
+// end page context
+
 function inject() {
+  console.debug("inject");
   document.getElementById("inject-mqtt")?.remove();
   const script = document.createElement("script");
 
@@ -270,6 +288,7 @@ function inject() {
   script.src = browser.runtime.getURL("scripts/dist/mqtt.js");
 
   script.onload = () => {
+    console.debug("injected mqtt");
     document.getElementById("inject-script")?.remove();
     const script = document.createElement("script");
 
@@ -285,4 +304,19 @@ function inject() {
   document.head.insertBefore(script, document.head.firstChild);
 }
 
-document.addEventListener("DOMContentLoaded", inject);
+var onAppend = function (elem: HTMLElement, f: (nodes: NodeList) => void) {
+  var observer = new MutationObserver(function (mutations) {
+    mutations.forEach(function (m) {
+      if (m.addedNodes.length) {
+        f(m.addedNodes);
+      }
+    });
+  });
+  observer.observe(elem, { childList: true });
+};
+
+onAppend(document.documentElement, (added) => {
+  if (added[0] == document.head) {
+    inject();
+  }
+});

@@ -1,15 +1,15 @@
 import {
-    Box,
-    Button,
-    Flex,
-    Link,
-    NumberInput,
-    NumberInputField,
-    Tab,
-    TabList,
-    TabPanel,
-    TabPanels,
-    Tabs,
+  Box,
+  Button,
+  Flex,
+  Link,
+  NumberInput,
+  NumberInputField,
+  Tab,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Tabs,
 } from "@chakra-ui/react";
 import { faGithub } from "@fortawesome/free-brands-svg-icons";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
