@@ -1,1 +1,0 @@
-../../scripts/src/config.ts
