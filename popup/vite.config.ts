@@ -10,4 +10,25 @@ export default defineConfig({
       allow: ["./src", "../scripts/src"],
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom"],
+          fontawesome: [
+            "@fortawesome/fontawesome-svg-core",
+            "@fortawesome/free-brands-svg-icons",
+            "@fortawesome/free-solid-svg-icons",
+            "@fortawesome/react-fontawesome",
+          ],
+          chakra: [
+            "@chakra-ui/react",
+            "@emotion/react",
+            "@emotion/styled",
+            "framer-motion",
+          ],
+        },
+      },
+    },
+  },
 });
