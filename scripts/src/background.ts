@@ -30,6 +30,13 @@ browser.runtime.onMessage.addListener(async (msg, _sender) => {
         sendCfg(cfg, tab);
       }
     });
+  } else if (typeof data.toggleFakeMessage != "undefined") {
+    setCfg({ fakeMessageNotification: data.toggleFakeMessage }).then((cfg) => {
+      sendCfg(cfg);
+      for (let tab of tabs) {
+        sendCfg(cfg, tab);
+      }
+    });
   } else if (typeof data.toggleBlockSeen != "undefined") {
     setCfg({ blockSeen: data.toggleBlockSeen }).then((cfg) => {
       sendCfg(cfg);

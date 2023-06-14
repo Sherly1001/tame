@@ -1,6 +1,7 @@
 export type BLockMode = "blacklist" | "whitelist";
 
 export class Config {
+  fakeMessageNotification: boolean = false;
   blockMode: BLockMode = "blacklist";
   blacklist: string[] = [];
   whitelist: string[] = [];
@@ -15,6 +16,7 @@ export class Config {
 
 export interface Message {
   cfg?: Config;
+  toggleFakeMessage?: boolean;
   toggleBlockMode?: BLockMode;
   toggleBlockSeen?: boolean;
   toggleBlockTyping?: boolean;

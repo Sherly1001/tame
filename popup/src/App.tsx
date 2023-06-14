@@ -1,29 +1,28 @@
 import {
-  Box,
-  Button,
-  Flex,
-  Link,
-  NumberInput,
-  NumberInputField,
-  Switch,
-  Tab,
-  TabList,
-  TabPanel,
-  TabPanels,
-  Tabs,
-  Text,
+    Box,
+    Button,
+    Flex,
+    Link,
+    NumberInput,
+    NumberInputField,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
 } from "@chakra-ui/react";
 import { faGithub } from "@fortawesome/free-brands-svg-icons";
-import { faCheck, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
+import List from "./comps/List";
+import Switch from "./comps/Switch";
 import { Config, Message } from "./config";
 import { getCfg, sendMsg } from "./utils";
 
 export default function App() {
   const [cfg, rsetCfg] = useState<Config>(new Config());
   const [conversationId, setConversationId] = useState("");
-  const [confirmDelete, setConfirmDelete] = useState(-1);
 
   useEffect(() => {
     getCfg().then(rsetCfg);
@@ -39,37 +38,31 @@ export default function App() {
   }, []);
 
   return (
-    <Box minHeight="60">
-      <Flex padding="2">
-        <Flex
-          flex="1"
-          minWidth="36"
-          alignItems="center"
-          justifyContent="space-between"
-          paddingEnd="4"
-        >
-          <Text>Block Seen</Text>
+    <Box>
+      <Flex padding="2" flexDirection="column">
+        <Flex>
           <Switch
+            label="Block Seen"
             isChecked={cfg.blockSeen}
             onChange={() => {
               sendMsg({ toggleBlockSeen: !cfg.blockSeen });
             }}
           />
-        </Flex>
-        <Flex
-          flex="1"
-          minWidth="36"
-          alignItems="center"
-          justifyContent="space-between"
-        >
-          <Text>Block Typing</Text>
           <Switch
+            label="Block Typing"
             isChecked={cfg.blockTyping}
             onChange={() => {
               sendMsg({ toggleBlockTyping: !cfg.blockTyping });
             }}
           />
         </Flex>
+        <Switch
+          label="Fake Message Notification"
+          isChecked={cfg.fakeMessageNotification}
+          onChange={() => {
+            sendMsg({ toggleFakeMessage: !cfg.fakeMessageNotification });
+          }}
+        />
       </Flex>
       <Tabs
         position="relative"
@@ -109,72 +102,20 @@ export default function App() {
         </Box>
         <TabPanels maxHeight="80" overflowY="scroll">
           <TabPanel>
-            {cfg.blacklist.map((cid, idx) => (
-              <Flex key={idx} marginY="2">
-                <Flex
-                  flex="1"
-                  border="1px solid #38383d"
-                  borderRadius="6"
-                  alignItems="center"
-                  paddingStart="2"
-                >
-                  <Text>{cid}</Text>
-                </Flex>
-                <Button
-                  type="submit"
-                  marginStart="2"
-                  onClick={() => {
-                    if (confirmDelete != idx) {
-                      setConfirmDelete(idx);
-                    } else {
-                      sendMsg({ removeFromBlacklist: cid });
-                      setConfirmDelete(-1);
-                    }
-                  }}
-                  onBlur={() => {
-                    setConfirmDelete(-1);
-                  }}
-                >
-                  <FontAwesomeIcon
-                    icon={confirmDelete == idx ? faCheck : faTrash}
-                  />
-                </Button>
-              </Flex>
-            ))}
+            <List
+              list={cfg.blacklist}
+              onDelete={(cid) => {
+                sendMsg({ removeFromBlacklist: cid });
+              }}
+            />
           </TabPanel>
           <TabPanel>
-            {cfg.whitelist.map((cid, idx) => (
-              <Flex key={idx} marginY="2">
-                <Flex
-                  flex="1"
-                  border="1px solid #38383d"
-                  borderRadius="6"
-                  alignItems="center"
-                  paddingStart="2"
-                >
-                  <Text>{cid}</Text>
-                </Flex>
-                <Button
-                  type="submit"
-                  marginStart="2"
-                  onClick={() => {
-                    if (confirmDelete != idx) {
-                      setConfirmDelete(idx);
-                    } else {
-                      sendMsg({ removeFromWhitelist: cid });
-                      setConfirmDelete(-1);
-                    }
-                  }}
-                  onBlur={() => {
-                    setConfirmDelete(-1);
-                  }}
-                >
-                  <FontAwesomeIcon
-                    icon={confirmDelete == idx ? faCheck : faTrash}
-                  />
-                </Button>
-              </Flex>
-            ))}
+            <List
+              list={cfg.whitelist}
+              onDelete={(cid) => {
+                sendMsg({ removeFromWhitelist: cid });
+              }}
+            />
           </TabPanel>
         </TabPanels>
         <Box position="absolute" top="2" right="4">
