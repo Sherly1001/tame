@@ -1,14 +1,26 @@
+import browser, { cookies } from "webextension-polyfill";
+
 import MQTT from "mqtt-packet";
 import { Config, Message } from "./config";
-
-const wrappedJSObject = (window as any).wrappedJSObject;
 
 browser.runtime.onMessage.addListener(async (msg, _sender) => {
   try {
     const data: Message = JSON.parse(msg);
 
     if (data.cfg) {
-      wrappedJSObject.cfg = cloneInto(data.cfg, window);
+      try {
+        const wrappedJSObject = (window as any).wrappedJSObject;
+        wrappedJSObject.cfg = cloneInto(data.cfg, window);
+      } catch (err) {
+        document.getElementById("inject-cfg")?.remove();
+        const script = document.createElement("script");
+
+        script.id = "inject-cfg";
+        script.type = "application/json";
+        script.textContent = JSON.stringify(data.cfg);
+
+        document.head.insertBefore(script, document.head.firstChild);
+      }
     }
   } catch (err) {
     console.error("runtime.msg", err);
@@ -16,8 +28,6 @@ browser.runtime.onMessage.addListener(async (msg, _sender) => {
 });
 
 browser.runtime.connect();
-
-wrappedJSObject.browser = cloneInto(browser, window, { cloneFunctions: true });
 
 // page context
 
@@ -33,7 +43,7 @@ function load() {
   const uid = document.cookie.match(/c_user=(\d+)/)?.[1];
 
   function isFocused() {
-    return typeof document.hidden !== undefined ? !document.hidden : null;
+    return document.hasFocus()
   }
 
   function find(obj: any, val: any) {
@@ -95,12 +105,15 @@ function load() {
   }
 
   function bodyLoad() {
+    console.debug("load users and groups");
+
     const groups = getKey("message_threads", true).find((g: any) => g.edges);
     const users = getKey("chat_sidebar_contact_rankings").map(
       (u: any) => u.user
     );
 
     if (groups) {
+      console.debug("got groups");
       awin.groups = groups.edges
         .map((g: any) => g.node)
         .map((g: any) => ({
@@ -119,6 +132,7 @@ function load() {
     }
 
     if (users) {
+      console.debug("got users");
       awin.users = users
         .filter((u: any) => u && u.id)
         .reduce((acc: any, u: any) => {
@@ -134,7 +148,11 @@ function load() {
       console.debug("new socket created", ws);
 
       ws.addEventListener("message", (event) => {
-        const cfg: Config = awin.cfg;
+        const cfg: Config = awin.cfg
+          ? awin.cfg
+          : JSON.parse(
+              document.getElementById("inject-cfg")?.textContent ?? "{}"
+            );
 
         if (
           !cfg.fakeMessageNotification ||
@@ -147,6 +165,8 @@ function load() {
         const p = mqtt.parser(opts);
 
         p.on("packet", (packet) => {
+          console.log(packet);
+
           if (packet.cmd == "publish" && packet.topic == "/ls_resp") {
             const data = new TextDecoder().decode(packet.payload);
             const objPay = JSON.parse(data);
@@ -170,6 +190,8 @@ function load() {
               const title =
                 "Facebook: " +
                 (group ? user.name + " to " + group.name : user.name);
+
+              console.log(msg, user, group);
 
               new Notification(title, {
                 icon: group ? group.img : user.profile_picture.uri,
@@ -196,7 +218,11 @@ function load() {
             return Reflect.apply(target, thisArg, argArray);
           }
 
-          const cfg: Config = awin.cfg;
+          const cfg: Config = awin.cfg
+            ? awin.cfg
+            : JSON.parse(
+                document.getElementById("inject-cfg")?.textContent ?? "{}"
+              );
 
           const data = argArray[0];
 

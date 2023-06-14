@@ -1,3 +1,5 @@
+import browser from "webextension-polyfill";
+
 import { Config, Message } from "./config";
 
 export async function getCfg() {

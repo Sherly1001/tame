@@ -11,6 +11,9 @@
     "storage",
     "activeTab"
   ],
+  "web_accessible_resources": [
+    "scripts/dist/*.js"
+  ],
   "browser_action": {
     "default_icon": "icons/tame-48.png",
     "default_title": "Tame",
@@ -24,6 +27,7 @@
   "content_scripts": [
     {
       "run_at": "document_start",
+      "all_frames": true,
       "matches": [
         "*://*.facebook.com/*"
       ],
