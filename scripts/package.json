@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "yarn mqtt; yarn content; yarn background",
-    "mqtt": "browserify -p tsify -g @browserify/uglifyify ./src/mqtt.ts -o dist/mqtt.js",
+    "build": "yarn inject; yarn content; yarn background",
+    "inject": "browserify -p tsify -g @browserify/uglifyify ./src/inject.ts -o dist/inject.js",
     "content": "browserify -p tsify -g @browserify/uglifyify ./src/content.ts -o dist/content.js",
     "background": "browserify -p tsify -g @browserify/uglifyify ./src/background.ts -o dist/background.js"
   },
