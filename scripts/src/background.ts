@@ -5,9 +5,11 @@ import { getCfg, sendCfg, setCfg } from "./utils";
 
 const tabs: number[] = [];
 
-browser.runtime.onInstalled.addListener(() => {
-  const cfg = new Config();
-  browser.storage.local.set(cfg);
+browser.runtime.onInstalled.addListener(async () => {
+  const cfg = await getCfg();
+  if (!cfg.blockMode) {
+    await setCfg(new Config());
+  }
 });
 
 browser.runtime.onConnect.addListener(async (port) => {

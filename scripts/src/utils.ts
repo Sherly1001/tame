@@ -3,11 +3,11 @@ import browser from "webextension-polyfill";
 import { Config, Message } from "./config";
 
 export async function getCfg() {
-  return (await browser.storage.local.get(Config.keys())) as Config;
+  return (await browser.storage.sync.get(Config.keys())) as Config;
 }
 
 export async function setCfg(cfg: Partial<Config>) {
-  await browser.storage.local.set(cfg);
+  await browser.storage.sync.set(cfg);
   return await getCfg();
 }
 
