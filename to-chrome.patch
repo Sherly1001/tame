@@ -1,0 +1,39 @@
+diff --git a/manifest.json b/manifest.json
+index 0adccf4..27e21b9 100644
+--- a/manifest.json
++++ b/manifest.json
+@@ -1,5 +1,5 @@
+ {
+-  "manifest_version": 2,
++  "manifest_version": 3,
+   "name": "tame",
+   "version": "1.0",
+   "description": "Facebook block seen and typing",
+@@ -12,17 +12,22 @@
+     "activeTab"
+   ],
+   "web_accessible_resources": [
+-    "scripts/dist/*.js"
++    {
++      "resources": [
++        "scripts/dist/*.js"
++      ],
++      "matches": [
++        "*://*.facebook.com/*"
++      ]
++    }
+   ],
+-  "browser_action": {
++  "action": {
+     "default_icon": "icons/tame-48.png",
+     "default_title": "Tame",
+     "default_popup": "popup/dist/index.html"
+   },
+   "background": {
+-    "scripts": [
+-      "scripts/dist/background.js"
+-    ]
++    "service_worker": "scripts/dist/background.js"
+   },
+   "content_scripts": [
+     {
