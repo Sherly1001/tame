@@ -42,7 +42,7 @@ export default function App() {
   return (
     <Box>
       <Flex padding="2" flexDirection="column">
-        <Flex>
+        <Flex marginBottom="1">
           <Switch
             label="Block Seen"
             isChecked={cfg.blockSeen}
@@ -94,7 +94,11 @@ export default function App() {
                 value={conversationId}
                 onChange={(val) => setConversationId(val)}
               >
-                <NumberInputField placeholder="conversation id" flex="1" />
+                <NumberInputField
+                  placeholder="conversation id"
+                  flex="1"
+                  minWidth="60"
+                />
               </NumberInput>
               <Button type="submit" marginStart="2">
                 <FontAwesomeIcon icon={faPlus} />
