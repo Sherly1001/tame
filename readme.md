@@ -5,7 +5,7 @@ Just reverse the name for Meta. :v
 ## Install
 
 - Get it from Chrome Web Store [here](https://chrome.google.com/webstore/detail/tame/ekkfmgebnjoeklkbnnmkgclphcgemnml)
-- Get it from Mozilla Add-ons [here](https://addons.mozilla.org/en-US/firefox/addon/tame/)
+- Get it from Mozilla Add-ons [here](https://addons.mozilla.org/en-US/firefox/addon/tamev2/)
 - For developers, just run:
   ```
   yarn install
