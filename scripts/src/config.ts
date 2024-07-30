@@ -7,6 +7,7 @@ export class Config {
   whitelist: string[] = [];
   blockSeen: boolean = true;
   blockTyping: boolean = true;
+  blockSeenStory: boolean = true;
 
   static keys() {
     const cfg = new Config();
@@ -14,12 +15,17 @@ export class Config {
   }
 }
 
+/**
+ * format for message to sends between listeners
+ * `cfg` property: background -> tabs
+ * other properties: popup -> background
+ */
 export interface Message {
   cfg?: Config;
-  toggleFakeMessage?: boolean;
   toggleBlockMode?: BLockMode;
   toggleBlockSeen?: boolean;
   toggleBlockTyping?: boolean;
+  toggleBlockSeenStory?: boolean;
   addToBlacklist?: string;
   addToWhitelist?: string;
   removeFromBlacklist?: string;
