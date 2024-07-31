@@ -1,7 +1,7 @@
 declare function cloneInto<T>(
   variable: T,
   window: Window,
-  options?: { cloneFunctions: boolean }
+  options?: { cloneFunctions: boolean },
 ): T;
 
 declare function exportFunction(
@@ -9,6 +9,5 @@ declare function exportFunction(
   window: Window,
   options?: {
     defineAs: string;
-  }
+  },
 );
-

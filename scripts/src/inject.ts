@@ -1,271 +1,146 @@
-import mqtt from "mqtt-packet";
 import { Config } from "./config";
 
-(() => {
-  console.debug("injected load");
+type Args = [string, string[], Function, (number | null)?];
 
-  const opts = {
-    protocolVersion: 3,
+(() => {
+  const awin = window as any;
+
+  function to_string(threadId: number[]) {
+    return BigInt.asIntN(
+      64,
+      (BigInt(threadId[0]) << BigInt(32)) + BigInt(threadId[1]),
+    ).toString();
+  }
+
+  function getCfg() {
+    return JSON.parse(
+      document.getElementById("content-cfg")?.innerText ??
+        JSON.stringify(new Config()),
+    ) as Config;
+  }
+
+  function checkBlock(threadId: string, type: "seen" | "typing") {
+    const cfg = getCfg();
+    return (
+      (type == "seen" ? cfg.blockSeen : cfg.blockTyping) &&
+      ((cfg.blockMode == "blacklist" && cfg.blacklist.includes(threadId)) ||
+        (cfg.blockMode == "whitelist" && !cfg.whitelist.includes(threadId)))
+    );
+  }
+
+  awin.getCfg = getCfg;
+  awin.checkBlock = checkBlock;
+
+  const funcOverrideWappers: Record<
+    string,
+    (orgFunc: Function) => (...args: any[]) => Function
+  > = {};
+  const objOverrideWappers: Record<string, (orgFunc: string) => string> = {};
+
+  objOverrideWappers["MAWJobDefinitions"] = (orgFunc) => {
+    const func = orgFunc.replace(
+      /markThreadAsRead:function(.*?){/,
+      "markThreadAsRead:function$1{return;",
+    );
+    return func;
   };
 
-  const awin = window as any;
-  const uid = document.cookie.match(/c_user=(\d+)/)?.[1];
+  objOverrideWappers["MAWSecureTypingState"] = (orgFunc) => {
+    return orgFunc.replace(
+      '"sendChatStateFromComposer"',
+      'window.checkBlock?.(p,"typing")?"none":"sendChatStateFromComposer"',
+    );
+  };
 
-  function isFocused() {
-    return document.hasFocus();
-  }
-
-  function find(obj: any, val: any) {
-    const stack = [];
-    stack.push(obj);
-
-    while (stack.length > 0) {
-      let currObj = stack.pop();
-
-      if (Array.isArray(currObj)) {
-        if (currObj.includes(val)) return currObj;
-        stack.push(...currObj.slice().reverse());
-      } else if (currObj === Object(currObj)) {
-        const keys = Object.keys(currObj);
-        if (keys.includes(val)) return currObj[val];
-        stack.push(...Object.values(currObj).reverse());
+  funcOverrideWappers["LSOptimisticMarkThreadReadV2"] =
+    (orgFunc) =>
+    (...args) => {
+      if (!checkBlock(to_string(args[0]), "seen")) {
+        return orgFunc.apply(orgFunc, args);
       }
-    }
-
-    return null;
-  }
-
-  function getKey(key: string, retArr = false) {
-    const sjs = [
-      ...Array.from(
-        document.querySelectorAll<HTMLScriptElement>(
-          'script[type="application/json"]'
-        )
-      ),
-    ]
-      .filter((i) => i.textContent?.includes(key))
-      .map((s) => JSON.parse(s.textContent ?? "{}"));
-
-    if (retArr) {
-      return sjs.map((js) => find(js, key));
-    }
-
-    return find(sjs, key);
-  }
-
-  function getGroup(cid: string) {
-    if ((awin.users as any)[cid]) return null;
-
-    const aTag = document.querySelector(`a[href="/messages/t/${cid}/"]`);
-
-    const name = aTag?.querySelector<HTMLSpanElement>(
-      "span:nth-child(1) > span:nth-child(1)"
-    )?.innerText;
-    const imgs = aTag?.querySelectorAll<HTMLImageElement>("img");
-    const img = imgs && imgs.length > 1 ? null : imgs?.[0] ? imgs[0].src : null;
-
-    const gr = {
-      cid,
-      name,
-      img,
     };
 
-    return gr;
-  }
+  funcOverrideWappers["LSSendTypingIndicator"] =
+    (orgFunc) =>
+    (...args) => {
+      if (!checkBlock(to_string(args[0]), "typing")) {
+        return orgFunc.apply(orgFunc, args);
+      }
+    };
 
-  function bodyLoad() {
-    console.debug("load users and groups");
+  funcOverrideWappers["storiesUpdateSeenStateMutation"] =
+    (orgFunc) =>
+    (...args) => {
+      const cfg = getCfg();
+      cfg.blockSeenStory && (args[2] = undefined);
+      return orgFunc.apply(orgFunc, args);
+    };
 
-    const groups = getKey("message_threads", true).find((g: any) => g.edges);
-    const users = getKey("chat_sidebar_contact_rankings").map(
-      (u: any) => u.user
-    );
+  let sher = awin.sher ?? ((awin.sher = {}), awin.sher);
+  function createOverrideWapper(args: Args) {
+    const functionName = args[0];
 
-    if (groups) {
-      console.debug("got groups");
-      awin.groups = groups.edges
-        .map((g: any) => g.node)
-        .map((g: any) => ({
-          cid: g.thread_key.thread_fbid,
-          name: g.name
-            ? g.name
-            : g.all_participants.edges
-                .map((u: any) => u.node.messaging_actor.short_name)
-                .join(", "),
-          img: g.image ? g.image.uri : null,
-        }))
-        .reduce((acc: any, g: any) => {
-          acc[g.cid] = g;
-          return acc;
-        }, {});
+    sher[functionName] = args;
+
+    if (objOverrideWappers[functionName]) {
+      const execCode = `window['__fnc'] = ${objOverrideWappers[functionName](args[2].toString())}`;
+
+      const elm = document.head ?? document.documentElement;
+      const script = document.createElement("script");
+      script.text = execCode;
+      elm.appendChild(script);
+      elm.removeChild(script);
+
+      args[2] = awin.__fnc;
     }
 
-    if (users) {
-      console.debug("got users");
-      awin.users = users
-        .filter((u: any) => u && u.id)
-        .reduce((acc: any, u: any) => {
-          acc[u.id] = u;
-          return acc;
-        }, {});
-    }
-  }
+    if (funcOverrideWappers[functionName]) {
+      args[2] = new Proxy(args[2], {
+        apply: (target, thisArg, args) => {
+          target.apply(thisArg, args);
 
-  WebSocket = new Proxy(WebSocket, {
-    construct(target, args, newTarget) {
-      const ws: WebSocket = Reflect.construct(target, args, newTarget);
-      console.debug("new socket created", ws);
-
-      ws.addEventListener("message", (event) => {
-        const cfg: Config = awin.cfg
-          ? awin.cfg
-          : JSON.parse(
-              document.getElementById("inject-cfg")?.textContent ?? "{}"
+          const idx = args.length - 2;
+          if (
+            args[idx]?.exports?.default &&
+            typeof args[idx].exports.default == "function"
+          ) {
+            args[idx].exports.default = funcOverrideWappers[functionName](
+              args[idx].exports.default,
             );
-
-        if (
-          !cfg.fakeMessageNotification ||
-          !ws.url.includes("edge-chat") ||
-          isFocused()
-        ) {
-          return;
-        }
-
-        const p = mqtt.parser(opts);
-
-        p.on("packet", (packet) => {
-          if (packet.cmd == "publish" && packet.topic == "/ls_resp") {
-            const data = new TextDecoder().decode(packet.payload);
-            const objPay = JSON.parse(data);
-            if (!objPay.sp) return;
-            if (objPay.sp.includes("updateThreadSnippet")) {
-              const obj2Pay = JSON.parse(objPay.payload);
-              const arr = find(obj2Pay.step, "updateThreadSnippet");
-              if (!arr || arr[5][1] == uid) return;
-
-              const msg = {
-                cid: arr[2][1],
-                uid: arr[5][1],
-                msg: arr[3],
-              };
-
-              const user = awin.users[msg.uid];
-              const group = awin.groups
-                ? awin.groups[msg.cid]
-                : getGroup(msg.cid);
-
-              const title =
-                "Facebook: " +
-                (group ? user.name + " to " + group.name : user.name);
-
-              console.log(msg, user, group);
-
-              new Notification(title, {
-                icon: group ? group.img : user.profile_picture.uri,
-                body: msg.msg,
-              });
-            }
+          } else if (
+            args[idx]?.exports &&
+            typeof args[idx].exports == "function"
+          ) {
+            args[idx].exports = funcOverrideWappers[functionName](
+              args[idx].exports,
+            );
           }
-        });
-
-        p.on("error", (err) => {
-          if (err.toString().includes("Invalid header flag bits")) {
-            console.warn("msg", err);
-          } else {
-            console.error("msg", err);
-          }
-        });
-
-        p.parse(event.data);
-      });
-
-      ws.send = new Proxy(ws.send, {
-        apply(target, thisArg, argArray) {
-          if (!ws.url.includes("edge-chat")) {
-            return Reflect.apply(target, thisArg, argArray);
-          }
-
-          const cfg: Config = awin.cfg
-            ? awin.cfg
-            : JSON.parse(
-                document.getElementById("inject-cfg")?.textContent ?? "{}"
-              );
-
-          const data = argArray[0];
-
-          const p = mqtt.parser(opts);
-
-          p.on("packet", (packet) => {
-            if (packet.cmd == "publish" && packet.topic == "/ls_req") {
-              const payData = new TextDecoder().decode(packet.payload);
-              const payObj = JSON.parse(payData);
-
-              if (cfg.blockTyping && payObj.type == 4) {
-                const pay2Obj = JSON.parse(payObj.payload);
-                const pay3Obj = JSON.parse(pay2Obj.payload);
-
-                if (!pay3Obj.thread_key) {
-                  return Reflect.apply(target, thisArg, argArray);
-                }
-
-                let block = false;
-                if (cfg.blockMode == "blacklist") {
-                  if (cfg.blacklist.includes(pay3Obj.thread_key.toString()))
-                    block = true;
-                } else {
-                  if (!cfg.whitelist.includes(pay3Obj.thread_key.toString()))
-                    block = true;
-                }
-
-                if (block) return;
-              }
-
-              if (cfg.blockSeen && payObj.type == 3) {
-                const pay2Obj = JSON.parse(payObj.payload);
-
-                let hasRead: null | string = null;
-                for (const i in pay2Obj.tasks) {
-                  if (pay2Obj.tasks[i].label == "21") {
-                    const pay3Obj = JSON.parse(pay2Obj.tasks[i].payload);
-                    hasRead = pay3Obj.thread_id.toString();
-                    pay3Obj.last_read_watermark_ts = 1e3 * Date.now();
-                    pay2Obj.tasks[i].payload = JSON.stringify(pay3Obj);
-                  }
-                }
-
-                if (hasRead) {
-                  let block = false;
-                  if (cfg.blockMode == "blacklist") {
-                    if (cfg.blacklist.includes(hasRead)) block = true;
-                  } else {
-                    if (!cfg.whitelist.includes(hasRead)) block = true;
-                  }
-
-                  if (block) {
-                    payObj.payload = JSON.stringify(pay2Obj);
-                    packet.payload = JSON.stringify(payObj);
-                    argArray[0] = mqtt.generate(packet, opts);
-                    return Reflect.apply(target, thisArg, argArray);
-                  }
-                }
-              }
-            }
-
-            return Reflect.apply(target, thisArg, argArray);
-          });
-
-          p.on("error", (err) => {
-            console.error("send", err);
-            return Reflect.apply(target, thisArg, argArray);
-          });
-
-          p.parse(data);
         },
       });
+    }
 
-      return ws;
+    return args;
+  }
+
+  let define = awin.__d;
+  function customDefine(target: any, thisArg: any, args: Args) {
+    return target.apply(thisArg, createOverrideWapper(args));
+  }
+
+  if (awin.__d) {
+    if (~define.toString().includes("__d_stub")) {
+      delete awin.__d;
+    } else {
+      define = new Proxy(awin.__d, { apply: customDefine });
+    }
+  }
+
+  Object.defineProperty(window, "__d", {
+    get: function () {
+      return define;
+    },
+    set: function (val) {
+      define = new Proxy(val, { apply: customDefine });
     },
   });
-
-  document.addEventListener("DOMContentLoaded", bodyLoad);
 })();

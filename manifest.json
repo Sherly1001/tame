@@ -1,20 +1,37 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "tame",
-  "version": "1.0",
+  "version": "1.1",
   "description": "Facebook block seen and typing",
   "icons": {
     "48": "icons/tame-48.png",
     "96": "icons/tame-96.png"
   },
+  "incognito": "not_allowed",
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "scripting",
+    "declarativeNetRequest",
+    "webRequest",
+    "webRequestBlocking"
+  ],
+  "host_permissions": [
+    "*://*.facebook.com/*",
+    "*://*.messenger.com/*"
   ],
   "web_accessible_resources": [
-    "scripts/dist/*.js"
+    {
+      "matches": [
+        "*://*.facebook.com/*",
+        "*://*.messenger.com/*"
+      ],
+      "resources": [
+        "*"
+      ]
+    }
   ],
-  "browser_action": {
+  "action": {
     "default_icon": "icons/tame-48.png",
     "default_title": "Tame",
     "default_popup": "popup/dist/index.html"
@@ -23,17 +40,5 @@
     "scripts": [
       "scripts/dist/background.js"
     ]
-  },
-  "content_scripts": [
-    {
-      "run_at": "document_start",
-      "all_frames": true,
-      "matches": [
-        "*://*.facebook.com/*"
-      ],
-      "js": [
-        "scripts/dist/content.js"
-      ]
-    }
-  ]
+  }
 }

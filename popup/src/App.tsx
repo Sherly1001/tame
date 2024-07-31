@@ -59,10 +59,10 @@ export default function App() {
           />
         </Flex>
         <Switch
-          label="Fake Message Notification"
-          isChecked={cfg.fakeMessageNotification}
+          label="Block Seen on Stories"
+          isChecked={cfg.blockSeenStory}
           onChange={() => {
-            sendMsg({ toggleFakeMessage: !cfg.fakeMessageNotification });
+            sendMsg({ toggleBlockSeenStory: !cfg.blockSeenStory });
           }}
         />
       </Flex>
