@@ -21,7 +21,9 @@ Just reverse the name for Meta. :v
 
 - Block seen in chat
 - Block typing in chat
+- Block seen in stories
 - Two blocking modes: `blacklist` and `whitelist`
   - In `blacklist` mode: block all conversations in the `blacklist`
   - In `whitelist` mode: block all conversations not in the `whitelist`
-- Create fake message notifications (In Firefox, for some reason, can't get notifications from Facebook)
+- Working in end-to-end conversations
+- Check more detailed usage [here](https://github.com/Sherly1001/tame/wiki/How-to-Use-Tame)
