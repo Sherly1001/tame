@@ -1,0 +1,16 @@
+diff --git a/manifest.json b/manifest.json
+index 249ed01..b79566d 100644
+--- a/manifest.json
++++ b/manifest.json
+@@ -7,6 +7,11 @@
+     "48": "icons/tame-48.png",
+     "96": "icons/tame-96.png"
+   },
++  "browser_specific_settings": {
++    "gecko": {
++      "id": "{36333a9a-954e-47ca-ac04-2013eabbc922}"
++    }
++  },
+   "incognito": "not_allowed",
+   "permissions": [
+     "storage",
