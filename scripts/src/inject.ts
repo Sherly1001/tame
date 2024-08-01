@@ -38,11 +38,10 @@ type Args = [string, string[], Function, (number | null)?];
   const objOverrideWappers: Record<string, (orgFunc: string) => string> = {};
 
   objOverrideWappers["MAWJobDefinitions"] = (orgFunc) => {
-    const func = orgFunc.replace(
+    return orgFunc.replace(
       /markThreadAsRead:function(.*?){/,
       "markThreadAsRead:function$1{return;",
     );
-    return func;
   };
 
   objOverrideWappers["MAWSecureTypingState"] = (orgFunc) => {
@@ -76,11 +75,8 @@ type Args = [string, string[], Function, (number | null)?];
       return orgFunc.apply(orgFunc, args);
     };
 
-  let sher = awin.sher ?? ((awin.sher = {}), awin.sher);
   function createOverrideWapper(args: Args) {
     const functionName = args[0];
-
-    sher[functionName] = args;
 
     if (objOverrideWappers[functionName]) {
       const execCode = `window['__fnc'] = ${objOverrideWappers[functionName](args[2].toString())}`;
@@ -135,12 +131,15 @@ type Args = [string, string[], Function, (number | null)?];
     }
   }
 
-  Object.defineProperty(window, "__d", {
-    get: function () {
-      return define;
-    },
-    set: function (val) {
-      define = new Proxy(val, { apply: customDefine });
-    },
-  });
+  const defined = Object.getOwnPropertyDescriptor(window, "__d");
+  if (!defined || defined.configurable) {
+    Object.defineProperty(window, "__d", {
+      get: function () {
+        return define;
+      },
+      set: function (val) {
+        define = new Proxy(val, { apply: customDefine });
+      },
+    });
+  }
 })();

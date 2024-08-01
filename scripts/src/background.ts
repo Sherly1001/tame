@@ -51,7 +51,7 @@ browser.webRequest?.onHeadersReceived?.addListener(
 browser.runtime.onInstalled.addListener(async () => {
   const cfg = await getCfg();
   if (!cfg.blockMode) {
-    await setThenSendCfg(new Config());
+    await setThenSendCfg(new Config()).catch((_) => {});
   }
 });
 
