@@ -37,6 +37,29 @@ type Args = [string, string[], Function, (number | null)?];
   > = {};
   const objOverrideWappers: Record<string, (orgFunc: string) => string> = {};
 
+  function applyArgs(
+    orgFunc: any,
+    orgFuncWrapper: (...args: any[]) => Function,
+  ) {
+    const props = Object.getOwnPropertyNames(orgFunc);
+    const wrapper = function (this: any, ...args: any[]) {
+      return orgFuncWrapper.apply(this, args);
+    };
+
+    props.forEach((i) => {
+      if (i.startsWith("__")) {
+        Object.defineProperty(wrapper, i, {
+          value: orgFunc[i],
+          writable: false,
+          enumerable: false,
+          configurable: true,
+        });
+      }
+    });
+
+    return wrapper;
+  }
+
   objOverrideWappers["MAWJobDefinitions"] = (orgFunc) => {
     return orgFunc.replace(
       /markThreadAsRead:function(.*?){/,
@@ -51,29 +74,27 @@ type Args = [string, string[], Function, (number | null)?];
     );
   };
 
-  funcOverrideWappers["LSOptimisticMarkThreadReadV2"] =
-    (orgFunc) =>
-    (...args) => {
-      if (!checkBlock(to_string(args[0]), "seen")) {
+  funcOverrideWappers["LSOptimisticMarkThreadReadV2"] = (orgFunc) =>
+    applyArgs(orgFunc, (...args) => {
+      if (checkBlock(to_string(args[0]), "seen")) {
+        return args[args.length - 1].resolve([]);
+      } else {
         return orgFunc.apply(orgFunc, args);
       }
-    };
+    });
 
-  funcOverrideWappers["LSSendTypingIndicator"] =
-    (orgFunc) =>
-    (...args) => {
-      if (!checkBlock(to_string(args[0]), "typing")) {
-        return orgFunc.apply(orgFunc, args);
-      }
-    };
+  funcOverrideWappers["LSSendTypingIndicator"] = (orgFunc) =>
+    applyArgs(orgFunc, (...args) => {
+      args[2] = checkBlock(to_string(args[0]), "typing");
+      return orgFunc.apply(orgFunc, args);
+    });
 
-  funcOverrideWappers["storiesUpdateSeenStateMutation"] =
-    (orgFunc) =>
-    (...args) => {
+  funcOverrideWappers["storiesUpdateSeenStateMutation"] = (orgFunc) =>
+    applyArgs(orgFunc, (...args) => {
       const cfg = getCfg();
       cfg.blockSeenStory && (args[2] = undefined);
       return orgFunc.apply(orgFunc, args);
-    };
+    });
 
   function createOverrideWapper(args: Args) {
     const functionName = args[0];
