@@ -1,5 +1,5 @@
 diff --git a/manifest.json b/manifest.json
-index 249ed01..b79566d 100644
+index 3fff915..24a7851 100644
 --- a/manifest.json
 +++ b/manifest.json
 @@ -7,6 +7,11 @@
@@ -11,6 +11,6 @@ index 249ed01..b79566d 100644
 +      "id": "{36333a9a-954e-47ca-ac04-2013eabbc922}"
 +    }
 +  },
-   "incognito": "not_allowed",
    "permissions": [
      "storage",
+     "activeTab",
