@@ -1,13 +1,12 @@
 {
   "manifest_version": 3,
   "name": "tame",
-  "version": "1.2",
+  "version": "1.2.1",
   "description": "Facebook block seen and typing",
   "icons": {
     "48": "icons/tame-48.png",
     "96": "icons/tame-96.png"
   },
-  "incognito": "not_allowed",
   "permissions": [
     "storage",
     "activeTab",

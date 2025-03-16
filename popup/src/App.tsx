@@ -4,9 +4,8 @@ import {
   Box,
   Button,
   Flex,
+  Input,
   Link,
-  NumberInput,
-  NumberInputField,
   Tab,
   TabList,
   TabPanel,
@@ -90,16 +89,14 @@ export default function App() {
             }}
           >
             <Flex>
-              <NumberInput
+              <Input
+                flex="1"
+                minWidth="60"
+                placeholder="conversation id"
+                type="number"
                 value={conversationId}
-                onChange={(val) => setConversationId(val)}
-              >
-                <NumberInputField
-                  placeholder="conversation id"
-                  flex="1"
-                  minWidth="60"
-                />
-              </NumberInput>
+                onChange={(e) => setConversationId(e.target.value)}
+              />
               <Button type="submit" marginStart="2">
                 <FontAwesomeIcon icon={faPlus} />
               </Button>
